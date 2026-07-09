@@ -1,10 +1,8 @@
 services:
-  - type: worker
+  - type: web
     name: eco-agentes
     runtime: python
-    buildCommand: |
-      apt-get update && apt-get install -y chromium-browser chromium-chromedriver
-      pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: python orquestador.py
     healthCheckPath: /health
     envVars:
@@ -28,9 +26,17 @@ services:
         sync: false
       - key: YOUTUBE_NICHE
         value: technology automation shorts
+      - key: YOUTUBE_REFRESH_TOKEN
+        sync: false
       - key: LOCAL_SERVICE
         value: desarrollo web,automatizacion,ia,chatbots,paginas web
       - key: GMAIL_APP_PASSWORD
         sync: false
       - key: SERVICE_PITCH
         value: Shadow Tech - Automatizacion con IA en toda Espana
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: ADSTERRA_SITE_ID
+        value: 333d081ccb545bd33678a0f641a00be8

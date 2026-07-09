@@ -17,16 +17,20 @@ class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"OK")
+        self.wfile.write(b"Eco-Agentes Running")
     def log_message(self, format, *args):
         pass
 
 def iniciar_health_server():
-    server = HTTPServer(("0.0.0.0", 10000), HealthHandler)
-    server.serve_forever()
+    try:
+        server = HTTPServer(("0.0.0.0", 10000), HealthHandler)
+        server.serve_forever()
+    except Exception as e:
+        pass
 
 health_thread = threading.Thread(target=iniciar_health_server, daemon=True)
 health_thread.start()
+time.sleep(1)
 
 class Orquestador:
     def __init__(self):
