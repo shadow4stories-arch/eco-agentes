@@ -115,6 +115,7 @@ def main():
     from agentes.agente_youtube import AgenteYouTube
     from agentes.agente_blogger import AgenteBlogger
     from agentes.agente_email import AgenteEmail
+    from agentes.short_generator import ShortGenerator
 
     orq.registrar_agente("generador_contenido", GeneradorContenido(orq.ia, MODE))
     orq.registrar_agente("agente_fiverr", AgenteFiverr(orq.ia, MODE))
@@ -124,6 +125,7 @@ def main():
     orq.registrar_agente("agente_youtube", AgenteYouTube(orq.ia, MODE))
     orq.registrar_agente("agente_blogger", AgenteBlogger(orq.ia, MODE))
     orq.registrar_agente("agente_email", AgenteEmail(orq.ia, MODE))
+    orq.registrar_agente("short_generator", ShortGenerator(orq.ia))
 
     orq.iniciar()
 

@@ -1,6 +1,8 @@
 import os
 import json
 import smtplib
+import imaplib
+import email
 import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -12,78 +14,34 @@ class AgenteEmail:
         self.mode = mode
         self.email_from = "shadow4stories@gmail.com"
         self.password = os.getenv("GMAIL_APP_PASSWORD", "")
+        self.leads_file = "data/leads.json"
+        self.respuestas_pendientes = "data/respuestas_pendientes.json"
 
     def ejecutar(self):
         resultados = {}
-
-        leads = self._cargar_o_generar_leads()
-        if not leads:
-            return json.dumps({"status": "sin_leads"})
-
-        resultados["email_config"] = self._verificar_smtp()
-
-        if resultados["email_config"].get("smtp_ok"):
-            resultados["enviados"] = self._enviar_correos(leads)
-        else:
-            resultados["enviados"] = self._guardar_para_enviar(leads)
-
+        resultados["enviar_propuestas"] = self._enviar_a_leads()
+        resultados["responder_recibidos"] = self._revisar_y_responder()
         return json.dumps(resultados, indent=2, ensure_ascii=False)
 
-    def _verificar_smtp(self):
-        try:
-            server = smtplib.SMTP("smtp.gmail.com", 587)
-            server.starttls()
-            server.login(self.email_from, self.password)
-            server.quit()
-            return {"smtp_ok": True, "email": self.email_from}
-        except smtplib.SMTPAuthenticationError:
-            print("[EMAIL] Error de autenticacion Gmail.")
-            print("[EMAIL] NECESITAS: Ir a https://myaccount.google.com/security y crear una 'Contrasena de aplicacion'")
-            print("[EMAIL] O activar 'Acceso de apps menos seguras'")
-            return {"smtp_ok": False, "error": "autenticacion", "solucion": "Crear contrasena de aplicacion en Google"}
-        except Exception as e:
-            return {"smtp_ok": False, "error": str(e)}
-
-    def _cargar_o_generar_leads(self):
-        leads = []
-        try:
-            with open("data/leads.json", "r", encoding="utf-8") as f:
-                leads = json.load(f)
-        except:
-            pass
-
+    def _enviar_a_leads(self):
+        leads = self._cargar_leads()
         if not leads:
-            for ciudad in ["Madrid", "Barcelona", "Valencia", "Sevilla", "Bilbao"][:3]:
-                lead = self.ia.extract_json(
-                    "Eres un generador de leads B2B realista para Espana.",
-                    f"Genera un lead en {ciudad} que necesite automatizacion/IA. "
-                    f"JSON con: 'empresa', 'sector', 'necesidad', 'email' (inventado)"
-                )
-                if lead and lead.get("empresa"):
-                    leads.append(lead)
-            if leads:
-                with open("data/leads.json", "w", encoding="utf-8") as f:
-                    json.dump(leads, f, indent=2, ensure_ascii=False)
-
-        return leads
-
-    def _enviar_correos(self, leads):
-        enviados = []
-        for lead in leads[:5]:
+            return self._generar_y_guardar_leads()
+        enviados = 0
+        for lead in leads[:3]:
             try:
                 empresa = lead.get("empresa", "Cliente")
-                necesidad = lead.get("necesidad", "automatizar procesos")
                 email_to = lead.get("email", f"info@{empresa.lower().replace(' ','')}.es")
+                necesidad = lead.get("necesidad", "automatizar")
 
-                asunto = f"Transforma {empresa} con Automatizacion e IA"
+                asunto = f"Transforma {empresa} con Automatizacion e IA - Shadow Tech"
                 cuerpo = self.ia.think(
-                    "Eres un vendedor B2B experto. Escribes correos que abren y responden.",
+                    "Eres un vendedor B2B experto en Espana.",
                     f"Escribe email de venta para {empresa}. Necesidad: {necesidad}\n\n"
-                    f"Asunto atractivo, saludo personalizado, ofrecemos automatizacion e IA, "
-                    f"caso de exito breve, PRIMERA CONSULTORIA GRATIS, CTA agendar llamada. "
+                    f"Asunto atractivo, saludo, ofrecemos automatizacion e IA, "
+                    f"PRIMERA CONSULTORIA GRATIS, CTA: responder este correo. "
                     f"Firma: Shadow Tech | Automatizacion con IA"
                 )
-
                 msg = MIMEMultipart()
                 msg["From"] = self.email_from
                 msg["To"] = email_to
@@ -95,31 +53,80 @@ class AgenteEmail:
                 server.login(self.email_from, self.password)
                 server.send_message(msg)
                 server.quit()
-
-                enviados.append({"empresa": empresa, "email": email_to, "status": "enviado"})
-                print(f"[EMAIL] Enviado a {empresa} <{email_to}>")
-                time.sleep(3)
+                enviados += 1
+                lead["enviado"] = True
+                lead["fecha_envio"] = str(datetime.now())
+                time.sleep(2)
             except Exception as e:
-                enviados.append({"empresa": lead.get("empresa", ""), "error": str(e)})
-            time.sleep(2)
+                print(f"[EMAIL] Error enviando a {empresa}: {e}")
+        with open(self.leads_file, "w") as f:
+            json.dump(leads, f, indent=2, ensure_ascii=False)
+        return {"enviados": enviados, "total_leads": len(leads)}
 
-        return enviados
+    def _revisar_y_responder(self):
+        try:
+            mail = imaplib.IMAP4_SSL("imap.gmail.com")
+            mail.login(self.email_from, self.password)
+            mail.select("inbox")
+            status, mensajes = mail.search(None, "UNSEEN")
+            respondidos = 0
+            if status == "OK":
+                for num in mensajes[0].split()[:5]:
+                    status, data = mail.fetch(num, "(RFC822)")
+                    msg = email.message_from_bytes(data[0][1])
+                    remitente = msg["From"]
+                    asunto = msg["Subject"]
+                    cuerpo = ""
+                    if msg.is_multipart():
+                        for part in msg.walk():
+                            if part.get_content_type() == "text/plain":
+                                cuerpo = part.get_payload(decode=True).decode(errors="ignore")
+                                break
+                    else:
+                        cuerpo = msg.get_payload(decode=True).decode(errors="ignore")
 
-    def _guardar_para_enviar(self, leads):
-        guardados = []
-        for lead in leads[:5]:
-            empresa = lead.get("empresa", "Cliente")
-            email_to = lead.get("email", f"info@{empresa.lower().replace(' ','')}.es")
-            necesidad = lead.get("necesidad", "automatizar")
-            guardados.append({
-                "empresa": empresa,
-                "email": email_to,
-                "necesidad": necesidad,
-                "pendiente": True
-            })
+                    respuesta = self.ia.think(
+                        "Eres un vendedor experto respondiendo correos de clientes interesados. Debes convertir la conversacion en venta.",
+                        f"Cliente: {remitente}\nAsunto: {asunto}\nMensaje: {cuerpo[:500]}\n\n"
+                        f"Responde agradeciendo, resolviendo dudas, y ofreciendo agendar llamada. Ofrece PRIMERA CONSULTORIA GRATIS. Firma: Shadow Tech."
+                    )
+                    reply_msg = MIMEMultipart()
+                    reply_msg["From"] = self.email_from
+                    reply_msg["To"] = remitente
+                    reply_msg["Subject"] = f"Re: {asunto}"
+                    reply_msg.attach(MIMEText(respuesta, "plain", "utf-8"))
 
-        with open("data/emails_pendientes.json", "w", encoding="utf-8") as f:
-            json.dump(guardados, f, indent=2, ensure_ascii=False)
+                    server = smtplib.SMTP("smtp.gmail.com", 587)
+                    server.starttls()
+                    server.login(self.email_from, self.password)
+                    server.send_message(reply_msg)
+                    server.quit()
+                    respondidos += 1
+                    time.sleep(2)
 
-        print(f"[EMAIL] {len(guardados)} correos guardados como pendientes. Revisa data/emails_pendientes.json")
-        return guardados
+                    mail.store(num, "+FLAGS", "\\Answered")
+
+            mail.logout()
+            return {"respondidos": respondidos}
+        except Exception as e:
+            return {"error_imap": str(e)}
+
+    def _cargar_leads(self):
+        if os.path.exists(self.leads_file):
+            with open(self.leads_file, "r") as f:
+                return json.load(f)
+        return []
+
+    def _generar_y_guardar_leads(self):
+        leads = []
+        for ciudad in ["Madrid", "Barcelona", "Valencia", "Sevilla", "Bilbao", "Malaga"][:4]:
+            lead = self.ia.extract_json(
+                "Genera leads B2B realistas para Espana.",
+                f"Lead en {ciudad} que necesite automatizacion/IA. JSON: 'empresa','sector','necesidad','email'"
+            )
+            if lead and lead.get("empresa"):
+                lead["enviado"] = False
+                leads.append(lead)
+        with open(self.leads_file, "w") as f:
+            json.dump(leads, f, indent=2, ensure_ascii=False)
+        return {"leads_generados": len(leads)}
