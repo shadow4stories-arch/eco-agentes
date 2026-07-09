@@ -4,8 +4,6 @@ from datetime import datetime
 
 BLOG_DIR = "output/blogs"
 YT_DIR = "output/youtube_scripts"
-os.makedirs(BLOG_DIR, exist_ok=True)
-os.makedirs(YT_DIR, exist_ok=True)
 
 class GeneradorContenido:
     def __init__(self, ia, mode):

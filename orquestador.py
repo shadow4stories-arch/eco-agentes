@@ -32,6 +32,9 @@ class Orquestador:
     def __init__(self):
         self.ia = GroqClient()
         self.agentes = {}
+        os.makedirs("data", exist_ok=True)
+        os.makedirs("output/blogs", exist_ok=True)
+        os.makedirs("output/youtube_scripts", exist_ok=True)
         self.bitacora = "data/bitacora.json"
         self.estado_agentes = {}
         self._cargar_bitacora()
