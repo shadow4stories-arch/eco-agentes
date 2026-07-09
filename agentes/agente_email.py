@@ -11,7 +11,7 @@ class AgenteEmail:
         self.ia = ia
         self.mode = mode
         self.email_from = "shadow4stories@gmail.com"
-        self.password = os.getenv("GMAIL_APP_PASSWORD", "aissarah")
+        self.password = os.getenv("GMAIL_APP_PASSWORD", "")
 
     def ejecutar(self):
         resultados = {}

@@ -8,6 +8,7 @@ class AgenteYouTube:
         self.mode = mode
         self.channel = os.getenv("YOUTUBE_CHANNEL_NAME", "mi_canal")
         self.niche = os.getenv("YOUTUBE_NICHE", "technology")
+        self.api_key = os.getenv("YOUTUBE_API_KEY", "")
 
     def ejecutar(self):
         resultados = {}
