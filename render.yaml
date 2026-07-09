@@ -2,10 +2,11 @@ services:
   - type: worker
     name: eco-agentes
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      apt-get update && apt-get install -y chromium-browser chromium-chromedriver
+      pip install -r requirements.txt
     startCommand: python orquestador.py
-    healthCheck:
-      path: /health
+    healthCheckPath: /health
     envVars:
       - key: GROQ_API_KEY
         sync: false
@@ -19,8 +20,12 @@ services:
         value: python,web scraping,automation,data entry,virtual assistant,web development,chatbot,ia,bot development
       - key: BLOGGER_EMAIL
         value: shadow4stories@gmail.com
+      - key: BLOGGER_PASSWORD
+        sync: false
       - key: BLOG_TOPIC
         value: automatizacion ia tecnologia
+      - key: YOUTUBE_PASSWORD
+        sync: false
       - key: YOUTUBE_NICHE
         value: technology automation shorts
       - key: LOCAL_SERVICE

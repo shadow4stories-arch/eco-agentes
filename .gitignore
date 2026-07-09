@@ -1,7 +1,10 @@
 __pycache__/
 *.pyc
 .env
-data/
+data/leads.json
+data/emails_pendientes.json
+data/bitacora.json
+data/gigs_fiverr.txt
 output/blogs/
 output/youtube_scripts/
 render_deploy/

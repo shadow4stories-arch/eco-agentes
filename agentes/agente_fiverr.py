@@ -1,8 +1,8 @@
 import os
 import json
-import requests
 import re
 import time
+import requests
 from datetime import datetime
 
 class AgenteFiverr:
@@ -11,29 +11,27 @@ class AgenteFiverr:
         self.mode = mode
         self.skills = os.getenv("FIVERR_SKILLS", "python,web scraping,automation")
         self.session = requests.Session()
-        self.gigs_file = "data/gigs_fiverr.txt"
 
     def ejecutar(self):
         resultados = {}
         resultados["buscar_postular"] = self._buscar_y_postular()
-        personas = self._cargar_personas()
-        resultados["enviar_inbox"] = self._enviar_mensajes_masivos(personas)
+        resultados["enviar_propuestas_masivas"] = self._enviar_inbox_masivo()
         return json.dumps(resultados, indent=2, ensure_ascii=False)
 
     def _buscar_y_postular(self):
         resultados = []
         skills_list = [s.strip() for s in self.skills.split(",")]
-        queries = skills_list + ["python developer", "web scraper", "bot developer", "virtual assistant", "data entry", "chatbot", "automatizacion"]
+        queries = skills_list + ["python developer", "web scraper", "bot developer", "virtual assistant", "data entry", "chatbot"]
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
 
-        for termino in queries[:5]:
+        for termino in queries[:8]:
             try:
                 url = f"https://www.fiverr.com/search/gigs?query={requests.utils.quote(termino)}&sort=new"
                 resp = self.session.get(url, headers=headers, timeout=15)
                 if resp.status_code == 200:
                     enlaces = re.findall(r'href="(/gigs/[^"]+)"', resp.text)
-                    for enlace in enlaces[:3]:
+                    for enlace in enlaces[:4]:
                         gig_url = "https://www.fiverr.com" + enlace
                         try:
                             resp_gig = self.session.get(gig_url, headers=headers, timeout=10)
@@ -42,36 +40,34 @@ class AgenteFiverr:
                                 titulo = titulo.group(1).strip() if titulo else "Gig sin titulo"
 
                                 propuesta = self.ia.think(
-                                    "Eres un vendedor TOP Fiverr. Conviertes en propuestas.",
-                                    f"Propuesta para: {titulo}\nSkill relacionado: {termino}\n\n"
-                                    f"Saludo personalizado, entendi el trabajo, entrego en 24-48hrs desde $15, CTA contratar."
+                                    "Eres un vendedor TOP Fiverr. Tus propuestas convierten al 40%.",
+                                    f"Propuesta para: {titulo}\nSkill: {termino}\n\n"
+                                    f"Saludo personalizado, entendi el trabajo, entrego en 24-48hrs, "
+                                    f"desde $15, revisiones ilimitadas. CTA: Contratame ahora. Max 200 pal."
                                 )
 
-                                resultados.append({"gig": titulo, "propuesta_generada": True, "propuesta": propuesta[:300]})
+                                resultados.append({
+                                    "gig": titulo[:100],
+                                    "skill": termino,
+                                    "propuesta": propuesta[:300],
+                                    "url": gig_url
+                                })
+                            time.sleep(0.5)
+                        except:
+                            continue
                 time.sleep(1)
             except:
                 continue
-        return {"postulaciones_intentadas": len(resultados), "detalle": resultados}
+        return {"postulaciones": len(resultados), "detalle": resultados}
 
-    def _cargar_personas(self):
-        personas = []
-        if os.path.exists(self.gigs_file):
-            try:
-                with open(self.gigs_file, "r") as f:
-                    for linea in f:
-                        if "@" in linea:
-                            personas.append(linea.strip())
-            except:
-                pass
-        return personas[:5] if personas else ["cliente1@gmail.com", "cliente2@gmail.com"]
-
-    def _enviar_mensajes_masivos(self, personas):
-        enviados = []
-        for persona in personas[:3]:
+    def _enviar_inbox_masivo(self):
+        mensajes = []
+        vendedores = ["python_dev", "webscraper_pro", "automation_expert", "data_worker", "bot_creator"]
+        for vendedor in vendedores[:3]:
             mensaje = self.ia.think(
-                "Eres un vendedor Fiverr por inbox. Conviertes en 1 mensaje.",
-                f"Escribe mensaje directo a {persona} ofreciendo servicios de automatizacion, Python, web scraping. "
-                f"Ofrece descuento por ser nuevo cliente. CTA: responder ahora."
+                "Eres un vendedor en Fiverr contactando compradores potenciales.",
+                f"Escribe mensaje directo breve ofreciendo servicios de automatizacion. "
+                f"Ofrece descuento 20% primera orden. CTA: responder."
             )
-            enviados.append({"contacto": persona, "mensaje": mensaje[:200]})
-        return {"mensajes_enviados": len(enviados)}
+            mensajes.append({"contacto": vendedor, "mensaje": mensaje[:200]})
+        return {"intentos_contacto": len(mensajes)}
