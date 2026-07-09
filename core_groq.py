@@ -15,7 +15,7 @@ MODELS_PRIORIDAD = [
 
 class GroqClient:
     def __init__(self):
-        self.api_key = os.getenv("GROQ_API_KEY", "")
+        self.api_key = os.getenv("GROQ_API_KEY") or os.environ.get("GROQ_API_KEY", "")
         self.base_url = "https://api.groq.com/openai/v1/chat/completions"
         self.modelo_activo = None
         self.usar_simulacion = False

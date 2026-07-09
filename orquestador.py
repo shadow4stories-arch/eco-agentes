@@ -13,7 +13,10 @@ from core_groq import GroqClient
 sys.stdout.reconfigure(line_buffering=True)
 os.environ["PYTHONUNBUFFERED"] = "1"
 
-load_dotenv()
+load_dotenv(override=True)
+for k, v in os.environ.items():
+    if v and not k.startswith("_"):
+        pass  # Render env vars ya estan en os.environ
 
 MODE = os.getenv("MODE", "dry_run")
 CYCLE_MINUTES = int(os.getenv("CYCLE_MINUTES", 60))
