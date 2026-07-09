@@ -4,6 +4,7 @@ from datetime import datetime
 
 BLOG_DIR = "output/blogs"
 YT_DIR = "output/youtube_scripts"
+ADSTERRA_SCRIPT = '<script src="https://www.highperformanceformat.com/333d081ccb545bd33678a0f641a00be8/invoke.js"></script>'
 
 class GeneradorContenido:
     def __init__(self, ia, mode):
@@ -51,6 +52,7 @@ class GeneradorContenido:
                     f.write(f"Fecha: {datetime.now()}\n")
                     f.write(f"{'='*60}\n\n")
                     f.write(contenido)
+                    f.write(f"\n\n<div style='text-align:center;margin:20px 0'>{ADSTERRA_SCRIPT}</div>")
                 articulos_generados.append({"archivo": filepath, "titulo": titulo})
             else:
                 articulos_generados.append({"simulado": True, "titulo": titulo, "longitud": len(contenido)})
