@@ -1,0 +1,31 @@
+services:
+  - type: worker
+    name: eco-agentes
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python orquestador.py
+    healthCheck:
+      path: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: MODE
+        value: live
+      - key: CYCLE_MINUTES
+        value: 60
+      - key: FIVERR_EMAIL
+        value: shadow4stories@gmail.com
+      - key: FIVERR_SKILLS
+        value: python,web scraping,automation,data entry,virtual assistant,web development,chatbot,ia,bot development
+      - key: BLOGGER_EMAIL
+        value: shadow4stories@gmail.com
+      - key: BLOG_TOPIC
+        value: automatizacion ia tecnologia
+      - key: YOUTUBE_NICHE
+        value: technology automation shorts
+      - key: LOCAL_SERVICE
+        value: desarrollo web,automatizacion,ia,chatbots,paginas web
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: SERVICE_PITCH
+        value: Shadow Tech - Automatizacion con IA en toda Espana
