@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY") or os.environ.get("DEEPSEEK_API_KEY", "sk-2ec7249ff5834aa786b9a43d0d084ccd")
+DEEPSEEK_KEY = os.getenv("DEEPSEEK_API_KEY") or os.environ.get("DEEPSEEK_API_KEY", "")
 
 class GroqClient:
     def __init__(self):
