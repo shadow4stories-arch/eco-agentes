@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+data/
+output/blogs/
+output/youtube_scripts/
+render_deploy/
+*.log
