@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import time
 import schedule
@@ -7,6 +8,10 @@ from datetime import datetime
 from dotenv import load_dotenv
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from core_groq import GroqClient
+
+# Forzar flush de stdout para que Render vea los logs
+sys.stdout.reconfigure(line_buffering=True)
+os.environ["PYTHONUNBUFFERED"] = "1"
 
 load_dotenv()
 
@@ -66,10 +71,10 @@ class Orquestador:
         self.agentes[nombre] = instancia
 
     def ciclo_principal(self):
-        print(f"\n{'='*60}")
-        print(f"[ORQUESTADOR] Ciclo iniciado: {datetime.now()}")
-        print(f"[ORQUESTADOR] Modo: {MODE}")
-        print(f"{'='*60}")
+        print(f"\n{'='*60}", flush=True)
+        print(f"[ORQUESTADOR] Ciclo iniciado: {datetime.now()}", flush=True)
+        print(f"[ORQUESTADOR] Modo: {MODE}", flush=True)
+        print(f"{'='*60}", flush=True)
 
         decisiones = self.ia.extract_json(
             "Eres un orquestador de agentes de IA. Decides qué agente debe ejecutar acciones en cada ciclo basado en la productividad y resultados.",
@@ -86,22 +91,29 @@ class Orquestador:
         for nombre_agente in ejecutar:
             if nombre_agente in self.agentes:
                 try:
-                    print(f"\n--- Ejecutando: {nombre_agente} ---")
+                    print(f"\n--- Ejecutando: {nombre_agente} ---", flush=True)
                     resultado = self.agentes[nombre_agente].ejecutar()
                     self.estado_agentes[nombre_agente]["ultimo_ciclo"] = str(datetime.now())
                     self.estado_agentes[nombre_agente]["tareas_completadas"] += 1
                     self._guardar_bitacora()
-                    print(f"[OK] {nombre_agente}: {resultado[:200]}")
+                    print(f"[OK] {nombre_agente}: {resultado[:200]}", flush=True)
                 except Exception as e:
-                    print(f"[ERROR] {nombre_agente}: {e}")
+                    print(f"[ERROR] {nombre_agente}: {e}", flush=True)
             else:
-                print(f"[!] Agente '{nombre_agente}' no registrado")
+                print(f"[!] Agente '{nombre_agente}' no registrado", flush=True)
 
-        print(f"\n[ORQUESTADOR] Ciclo completado. Próximo en {CYCLE_MINUTES} minutos.\n")
+        print(f"\n[ORQUESTADOR] Ciclo completado. Proximo en {CYCLE_MINUTES} minutos.\n", flush=True)
 
     def iniciar(self):
-        print("[ORQUESTADOR] Sistema iniciado. Modo autónomo activado.")
-        self.ciclo_principal()
+        print("[ORQUESTADOR] Sistema iniciado. Modo autonomo activado.")
+        print(f"[ORQUESTADOR] Forzando primer ciclo inmediato...", flush=True)
+        try:
+            self.ciclo_principal()
+        except Exception as e:
+            print(f"[ORQUESTADOR] Error en primer ciclo: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
+        print(f"[ORQUESTADOR] Primer ciclo completado. Proximo en {CYCLE_MINUTES} minutos.", flush=True)
         schedule.every(CYCLE_MINUTES).minutes.do(self.ciclo_principal)
         while True:
             schedule.run_pending()
