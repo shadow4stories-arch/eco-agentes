@@ -6,7 +6,7 @@ services:
     startCommand: python orquestador.py
     healthCheckPath: /health
     envVars:
-      - key: GROQ_API_KEY
+      - key: DEEPSEEK_API_KEY
         sync: false
       - key: MODE
         value: live
